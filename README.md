@@ -7,11 +7,7 @@
 
 **A public multiplayer Asteroids arena, and a live demo of [Brainpod](https://brainpod.io).**
 No signup, no cookie banner — open the link, type a callsign, fly. One Next.js
-service, one managed Postgres, one managed Valkey, in `eu-west-1` (Ede, the
-Netherlands).
-
-The point of the demo is the part you cannot see: while everyone in the room is
-flying, you redeploy the app and nobody's ship stops moving.
+service, one managed Postgres, one managed Valkey.
 
 ## Deploy it yourself
 
