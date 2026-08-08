@@ -10,3 +10,12 @@ next-env.d.ts
 
 .DS_Store
 npm-debug.log*
+
+# Brainpod session console
+.brainpod/
+
+# Installed agent skills — the README has you install these yourself
+.agents/
+.claude/skills/
+.claude/settings.local.json
+skills-lock.json

@@ -30,7 +30,7 @@ it, and hands back a live URL.
 |---|---|
 | **Managed Postgres** | Every finished run writes one `runs` row. Six bots plus a room full of people keep that at ten to twenty inserts a minute unattended, so the database metrics graph is worth opening live. The ALL-TIME board reads straight from it. |
 | **Managed Valkey** | The entire multiplayer layer: a lease elects the single authoritative simulation, `bp:snap` fans binary snapshots to every replica at 20 Hz, and the LIVE board is a sorted set. |
-| **Up to 20 replicas** | Every replica runs the same image. One wins the lease and simulates; the rest are WebSocket gateways. Scale up mid-call and watch the `replica N of M` badge move. |
+| **Up to 10 replicas** | Every replica runs the same image. One wins the lease and simulates; the rest are WebSocket gateways. Scale up mid-call and watch the `replica N of M` badge move. |
 | **Zero-downtime deploys** | A draining leader flushes the world to Valkey and releases its lease, so a successor resumes the same tick. Worst measured snapshot gap on a two-replica cluster: **55 ms**, against a 50 ms nominal interval. |
 | **EU hosting** | The badge names the region and your RTT. Player names are the only user input, and they never leave `eu-west-1`. |
 | **Per-second billing** | A 30 Hz simulation on one small instance, plus gateways that do nothing but fan out bytes. The demo costs what it uses. |
@@ -46,7 +46,7 @@ flowchart LR
         S1["spectator"]
     end
 
-    subgraph replicas["Replicas — one image, up to 20"]
+    subgraph replicas["Replicas — one image, up to 10"]
         direction TB
         R1["replica 1<br/>gateway + LEADER<br/>30 Hz simulation"]
         R2["replica 2<br/>gateway"]
