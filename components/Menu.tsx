@@ -6,15 +6,25 @@ import { BrainpodMark } from "@/components/Marks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MAX_NAME_LENGTH } from "@/shared/names";
+import { CONTROL_SCHEMES, type ControlScheme } from "@/lib/controls";
+import { cn } from "@/lib/utils";
 import type { HudState } from "@/lib/net";
 
 type Props = {
   hud: HudState;
+  scheme: ControlScheme;
+  onSchemeChange: (scheme: ControlScheme) => void;
   onPlay: (name: string) => void;
   onSpectate: () => void;
 };
 
-export default function Menu({ hud, onPlay, onSpectate }: Props) {
+export default function Menu({
+  hud,
+  scheme,
+  onSchemeChange,
+  onPlay,
+  onSpectate,
+}: Props) {
   const [name, setName] = useState("");
   const joining = hud.phase === "joining";
   const ships = hud.roster.length;
@@ -41,13 +51,48 @@ export default function Menu({ hud, onPlay, onSpectate }: Props) {
           Fly it while we redeploy underneath you.
         </p>
 
-        <p className="hud-label mt-4 normal-case">
-          Steer with your cursor or the arrow keys · click to fire · one hit ends
-          the run
-        </p>
+        <p className="hud-label mt-4 normal-case">One hit ends the run</p>
+
+        <div
+          role="radiogroup"
+          aria-label="Controls"
+          className="mt-7 grid w-full grid-cols-2 gap-px overflow-hidden rounded-xl border border-edge bg-edge"
+        >
+          {CONTROL_SCHEMES.map((option) => {
+            const active = option.value === scheme;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={option.label}
+                onClick={() => onSchemeChange(option.value)}
+                className={cn(
+                  "px-3 py-3 backdrop-blur-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-beam/60 focus-visible:ring-inset",
+                  active
+                    ? "bg-panel shadow-[inset_0_2px_0_0_var(--color-beam)]"
+                    : "bg-hull/85 hover:bg-panel/60",
+                )}
+              >
+                <span className={cn("hud-label block", active && "text-bone")}>
+                  {option.label}
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 block text-note leading-snug",
+                    active ? "text-faint" : "text-ash",
+                  )}
+                >
+                  {option.hint}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <form
-          className="mt-8 flex w-full flex-col gap-3"
+          className="mt-4 flex w-full flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             onPlay(name);

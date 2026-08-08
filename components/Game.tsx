@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import DeathCard from "@/components/DeathCard";
 import Leaderboard from "@/components/Leaderboard";
 import { BrainpodMark } from "@/components/Marks";
@@ -8,6 +8,13 @@ import Menu from "@/components/Menu";
 import StatusBadge from "@/components/StatusBadge";
 import { INPUT_FIRE, INPUT_LEFT, INPUT_RIGHT } from "@/shared/constants";
 import { GameClient, inputFromKeys, type HudState } from "@/lib/net";
+import {
+  controlHint,
+  DEFAULT_CONTROL_SCHEME,
+  loadControlScheme,
+  saveControlScheme,
+  type ControlScheme,
+} from "@/lib/controls";
 import { Renderer } from "@/lib/render";
 import { Button } from "@/components/ui/button";
 
@@ -40,6 +47,8 @@ export default function Game() {
   const keysRef = useRef(new Set<string>());
   const touchRef = useRef(0);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const [scheme, setScheme] = useState<ControlScheme>(DEFAULT_CONTROL_SCHEME);
+  const schemeRef = useRef(scheme);
 
   const hud = useSyncExternalStore(client.subscribe, client.getHud, () => SERVER_HUD);
 
@@ -47,6 +56,14 @@ export default function Game() {
     client.start();
     return () => client.dispose();
   }, [client]);
+
+  useEffect(() => {
+    setScheme(loadControlScheme());
+  }, []);
+
+  useEffect(() => {
+    schemeRef.current = scheme;
+  }, [scheme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -82,14 +99,15 @@ export default function Game() {
       const dtMs = Math.min(now - last, 100);
       last = now;
 
+      const cursor = schemeRef.current === "cursor";
       const keys = inputFromKeys(keysRef.current);
-      client.setInput(keys | touchRef.current);
+      client.setInput(
+        (cursor ? keys & ~(INPUT_LEFT | INPUT_RIGHT) : keys) | touchRef.current,
+      );
 
       const pointer = pointerRef.current;
       client.setAimTarget(
-        pointer && !(keys & (INPUT_LEFT | INPUT_RIGHT))
-          ? renderer.toWorld(pointer.x, pointer.y)
-          : null,
+        cursor && pointer ? renderer.toWorld(pointer.x, pointer.y) : null,
       );
 
       client.advance(dtMs);
@@ -139,9 +157,10 @@ export default function Game() {
   }, []);
 
   /**
-   * Steering is wherever the pointer is: hover on a desktop, a held finger on a
-   * phone. Releasing a touch drops the target so the ship coasts rather than
-   * flying at the last place a thumb happened to be.
+   * Where the pointer is: hover on a desktop, a held finger on a phone. Cursor
+   * controls fly the ship at it; keyboard controls only take the fire button.
+   * Releasing a touch drops the target so the ship coasts rather than flying at
+   * the last place a thumb happened to be.
    */
   useEffect(() => {
     const onCanvas = (event: PointerEvent) => event.target === canvasRef.current;
@@ -223,6 +242,11 @@ export default function Game() {
       {hud.phase === "menu" || hud.phase === "joining" ? (
         <Menu
           hud={hud}
+          scheme={scheme}
+          onSchemeChange={(next) => {
+            setScheme(next);
+            saveControlScheme(next);
+          }}
           onPlay={(name) => client.join(name)}
           onSpectate={() => client.spectate()}
         />
@@ -246,7 +270,7 @@ export default function Game() {
         <StatusBadge hud={hud} className="pointer-events-auto" />
 
         <p className="hidden font-mono text-micro tracking-[0.1em] text-ash uppercase lg:block">
-          Arrows or your cursor · click to fire
+          {controlHint(scheme)}
         </p>
       </footer>
     </main>
