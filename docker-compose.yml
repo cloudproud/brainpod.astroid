@@ -1,0 +1,88 @@
+name: brainpod-asteroids
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: asteroids
+      POSTGRES_PASSWORD: asteroids
+      POSTGRES_DB: asteroids
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asteroids -d asteroids"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  # Two replicas of the same image behind a load balancer. One of them wins the
+  # Redis lease and runs the simulation; the other is a WebSocket gateway. Stop
+  # either one mid-game and nobody's ship stops moving.
+  app-a:
+    profiles: ["cluster"]
+    build:
+      context: .
+      args:
+        RELEASE_ID: ${RELEASE_ID:-local-1}
+    environment:
+      DATABASE_URL: postgres://asteroids:asteroids@postgres:5432/asteroids
+      REDIS_URL: redis://valkey:6379
+      POD_ID: pod-a
+      RELEASE_ID: ${RELEASE_ID:-local-1}
+      REGION: eu-west-1
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    stop_grace_period: 15s
+
+  app-b:
+    profiles: ["cluster"]
+    build:
+      context: .
+      args:
+        RELEASE_ID: ${RELEASE_ID:-local-1}
+    environment:
+      DATABASE_URL: postgres://asteroids:asteroids@postgres:5432/asteroids
+      REDIS_URL: redis://valkey:6379
+      POD_ID: pod-b
+      RELEASE_ID: ${RELEASE_ID:-local-1}
+      REGION: eu-west-1
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    stop_grace_period: 15s
+
+  edge:
+    profiles: ["cluster"]
+    image: caddy:2-alpine
+    ports:
+      - "${EDGE_PORT:-3000}:3000"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - app-a
+      - app-b
+
+volumes:
+  pgdata:
