@@ -28,8 +28,6 @@ it, and hands back a live URL.
 
 ![Brainpod Asteroids](docs/screenshot.png)
 
-<img src="docs/screenshot-mobile.png" alt="Brainpod Asteroids on a phone" width="240">
-
 ## What it proves
 
 | Brainpod claim | What demonstrates it |
