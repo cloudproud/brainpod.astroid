@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { Pool } from "pg";
+import { parse, toClientConfig } from "pg-connection-string";
 import { env } from "./env";
 import { log } from "./log";
 import type { RunEntry } from "../shared/protocol";
@@ -21,8 +22,11 @@ export class Database {
   readonly pool: Pool;
 
   constructor() {
+    // Do not collapse this back to `connectionString`: pg would then read the
+    // URL itself and treat `sslmode=require` as verify-full, which no public CA
+    // can satisfy for a managed database's pod-internal hostname.
     this.pool = new Pool({
-      connectionString: env.databaseUrl,
+      ...toClientConfig(parse(env.databaseUrl, { useLibpqCompat: true })),
       max: 8,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,

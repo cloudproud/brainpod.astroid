@@ -2,8 +2,19 @@ import Redis from "ioredis";
 import { env } from "./env";
 import { log } from "./log";
 
+/**
+ * A `rediss://` URL carries no verification mode, so it is treated the way
+ * libpq treats `sslmode=require`: encrypted, but not checked against a public
+ * CA. A managed Valkey is reachable only from inside the pod and presents a
+ * certificate for its internal hostname, which no public CA can vouch for.
+ */
+function tlsOptions(url: string) {
+  return url.startsWith("rediss://") ? { tls: { rejectUnauthorized: false } } : {};
+}
+
 export function createRedis(role: string): Redis {
   const client = new Redis(env.redisUrl, {
+    ...tlsOptions(env.redisUrl),
     lazyConnect: false,
     maxRetriesPerRequest: null,
     enableAutoPipelining: true,
