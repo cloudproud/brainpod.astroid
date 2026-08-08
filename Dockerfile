@@ -1,21 +1,24 @@
-FROM node:24-alpine AS deps
+# Next and tsc emit platform-independent JavaScript, so both compile stages run
+# on the host's own architecture. Only the runtime dependency tree has to match
+# the cluster, which leaves one short stage to emulate instead of the whole build.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,id=npm-build,target=/root/.npm npm ci
 
-FROM node:24-alpine AS build
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG RELEASE_ID=dev
 ENV RELEASE_ID=$RELEASE_ID
-RUN npm run build
+RUN --mount=type=cache,id=next-build,target=/app/.next/cache npm run build
 
 FROM node:24-alpine AS prune
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=cache,id=npm-runtime,target=/root/.npm npm ci --omit=dev
 
 # No `output: standalone` — Next does not trace custom server files, so the
 # runtime image carries real node_modules and runs dist/server/index.js.
