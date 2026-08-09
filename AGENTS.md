@@ -34,14 +34,11 @@ host, and the CLI already resolves the target from the active clusters.
 
 `App` + `Route` + `Postgres` (version 16) + `Valkey` (version 9), and a `Disk`
 for each of the two databases. The docs call the first one PostgresDB; the
-resource kind the CLI validates against is `Postgres`. Kinds are PascalCase
-inside a manifest and lowercase as a `resource get` argument, and cross-resource
-URNs take the lowercase form: `urn:brain:disk:default:<name>`.
+resource kind the CLI validates against is `Postgres`.
 
-Instance size gates replica count, which the `App` schema does not say: `.5x`
-rejects any `replicas` above 1 with `VALIDATION_ERROR` "Only 1 replica is
-allowed for this instance". The App therefore needs at least `1x` for the
-leader-and-gateways split to exist at all. `.5x` is fine for both databases.
+The App runs at `1x`. Anything smaller is capped at a single replica, which
+would take the leader-and-gateways split with it; `.5x` is fine for both
+databases.
 
 The App itself takes no `Disk` and no mounts. That is a requirement rather than
 an omission: an app with a disk mount is capped at a single instance, which
@@ -65,15 +62,6 @@ assembling a URL by hand:
 Postgres also exports `.host`, `.port`, `.user`, `.database`, and `.password`;
 Valkey exports `.host`, `.port`, and `.password`. Both `uri` forms are TLS —
 `postgres://...?sslmode=require` and `rediss://...`.
-
-The brainpod skill's `references/deploy.md` currently says the opposite: that the
-resource API exposes no interpolation contract and that `${...}` must never
-appear in `App.spec.env`. Trust this file instead, and do not spend a deploy
-settling it. A provisioned database exposes only `healthy`, `status`, and `urn`,
-and no CLI command anywhere prints credentials — so interpolation is the only
-mechanism by which the App can reach one. `resource create --dry-run` cannot
-adjudicate it either: it validates shape only, and accepts any non-empty string
-as an env value.
 
 Everything else has a working default and only needs setting to change it:
 `REGION` (`eu-west-1`, shown in the corner badge), `RELEASE_ID`, `TRUST_PROXY`
