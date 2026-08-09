@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/brainpod-wordmark.svg">
-  <img src=".github/brainpod-wordmark-light.svg" alt="Brainpod" width="160">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/hero-dark.gif">
+  <img src=".github/hero.gif" alt="Brainpod — build it in Claude, Cursor or Codex, host it in Europe" width="900">
 </picture>
 
 # Asteroids
