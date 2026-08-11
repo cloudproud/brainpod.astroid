@@ -26,9 +26,9 @@ host, and the CLI already resolves the target from the active clusters.
 - Readiness is `GET /healthz`, which returns 200 and a JSON body naming the pod,
   release, region, leadership, and connected client count.
 - WebSockets are served at `/ws`. The route has to pass upgrades through.
-- `replicas` may be anything from 1 to 10. Exactly one replica wins a Valkey
-  lease and runs the simulation; the rest are gateways. Scaling either way is
-  safe at any time.
+- `replicas` may be anything from 1 to 10, subject to the instance size below.
+  Exactly one replica wins a Valkey lease and runs the simulation; the rest are
+  gateways. Scaling either way is safe at any time.
 
 ## Resources
 
@@ -36,9 +36,16 @@ host, and the CLI already resolves the target from the active clusters.
 for each of the two databases. The docs call the first one PostgresDB; the
 resource kind the CLI validates against is `Postgres`.
 
-The App runs at `1x`. Anything smaller is capped at a single replica, which
-would take the leader-and-gateways split with it; `.5x` is fine for both
-databases.
+The App runs at `.25x` with one replica, and both databases at `.5x` on a 5 GB
+`Disk`. That is the floor of every enum involved, and it is deliberate: a trial
+account has to be able to host this demo, and a deploy that does not fit is
+worth less than one that starts small.
+
+Anything below `1x` is capped at a single replica, so at the deployed size the
+leader-and-gateways split exists in the code but not in the cluster. Restoring
+it is one deploy: raise the App to `1x` and `replicas` to 2 or more. Do that
+before demonstrating replicas or a zero-downtime deploy, and undo it after —
+leaving it up is most of what this pod costs.
 
 The App itself takes no `Disk` and no mounts. That is a requirement rather than
 an omission: an app with a disk mount is capped at a single instance, which
