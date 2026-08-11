@@ -22,6 +22,12 @@ Sign me up using the Brainpod skills, work out what the project needs, and hand 
 The skill signs you up, reads the project, works out what it needs, provisions
 it, and hands back a live URL.
 
+What it provisions is the smallest shape Brainpod sells — a `.25x` app on one
+replica, Postgres and Valkey at `.5x` on 5 GB disks — so the whole arena fits in
+a trial account. Everything below is true at that size except the replica count
+itself: for the leader-and-gateways split, raise the app to `1x` and scale it up
+for as long as you are watching.
+
 ![Brainpod Asteroids](docs/screenshot.png)
 
 ## What it proves
@@ -30,10 +36,10 @@ it, and hands back a live URL.
 |---|---|
 | **Managed Postgres** | Every finished run writes one `runs` row. Six bots plus a room full of people keep that at ten to twenty inserts a minute unattended, so the database metrics graph is worth opening live. The ALL-TIME board reads straight from it. |
 | **Managed Valkey** | The entire multiplayer layer: a lease elects the single authoritative simulation, `bp:snap` fans binary snapshots to every replica at 20 Hz, and the LIVE board is a sorted set. |
-| **Up to 10 replicas** | Every replica runs the same image. One wins the lease and simulates; the rest are WebSocket gateways. Scale up mid-call and watch the `replica N of M` badge move. |
-| **Zero-downtime deploys** | A draining leader flushes the world to Valkey and releases its lease, so a successor resumes the same tick. Worst measured snapshot gap on a two-replica cluster: **55 ms**, against a 50 ms nominal interval. |
+| **Up to 10 replicas** | Every replica runs the same image. One wins the lease and simulates; the rest are WebSocket gateways. Move the app to `1x`, scale it mid-call, and watch the `replica N of M` badge move — a trial-sized `.25x` app is held to one replica. |
+| **Zero-downtime deploys** | A draining leader flushes the world to Valkey and releases its lease, so a successor resumes the same tick. Worst measured snapshot gap on a two-replica cluster: **55 ms**, against a 50 ms nominal interval. Takes the same scale-up, for the same reason. |
 | **EU hosting** | The badge names the region and your RTT. Player names are the only user input, and they never leave `eu-west-1`. |
-| **Per-second billing** | A 30 Hz simulation on one small instance, plus gateways that do nothing but fan out bytes. The demo costs what it uses. |
+| **Per-second billing** | A 30 Hz simulation on the smallest instance sold, plus gateways that do nothing but fan out bytes once you add them. The demo costs what it uses, and at rest that is as little as this platform bills. |
 
 ## Architecture
 
