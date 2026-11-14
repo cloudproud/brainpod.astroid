@@ -1,0 +1,33 @@
+name: Deploy to Brainpod
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: brainpod-points-cheer
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Login to Brainpod registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.brainpod.localhost
+          username: ${{ github.actor }}
+          password: ${{ secrets.BRAINPOD_API_KEY }}
+
+      - name: Build and push
+        uses: brainhivenl/steiger-action@v5
+        env:
+          BUILD_EVENTS_ENDPOINT: http://api.brainpod.localhost
+          BUILD_EVENTS_TOKEN: ${{ secrets.BRAINPOD_POD_NAME }}:${{ secrets.BRAINPOD_API_KEY }}
+          BUILD_EVENTS_TARGET: urn:brainpod:pod:${{ secrets.BRAINPOD_POD_ID }}
+        with:
+          cmd: build
+          builders: railpack
+          args: --repo=registry.brainpod.localhost/points-cheer

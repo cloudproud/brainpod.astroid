@@ -1,0 +1,5 @@
+build:
+  brainpod-astroid:
+    type: docker
+    context: .
+    dockerfile: Dockerfile
