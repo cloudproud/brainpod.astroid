@@ -1,0 +1,10 @@
+build:
+  brainpod-astroid:
+    type: docker
+    context: .
+    dockerfile: Dockerfile
+    args:
+      - "--cache-from"
+      - "type=gha,scope=brainpod-astroid"
+      - "--cache-to"
+      - "type=gha,mode=max,scope=brainpod-astroid"
