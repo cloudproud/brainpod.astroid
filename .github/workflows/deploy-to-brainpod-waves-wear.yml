@@ -1,0 +1,19 @@
+name: Brainpod waves-wear
+
+on:
+  push:
+    branches: ["main", "brainpod/onboarding-waves-wear"]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: brainpodnl/actions/build@v1
+        with:
+          pod: waves-wear
